@@ -3,8 +3,10 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/wangx/AndroidStudioProjects/WiFiDetector/app/src/main/res/layout/activity_details.xml" value="0.21927083333333333" />
         <entry key="..\:/Users/wangx/AndroidStudioProjects/WiFiDetector/app/src/main/res/layout/activity_main.xml" value="0.25416666666666665" />
         <entry key="..\:/Users/wangx/AndroidStudioProjects/WiFiDetector/app/src/main/res/layout/row.xml" value="0.25416666666666665" />
+        <entry key="..\:/Users/wangx/AppData/Local/Android/Sdk/platforms/android-31/data/res/layout/simple_list_item_1.xml" value="0.22708333333333333" />
       </map>
     </option>
   </component>
