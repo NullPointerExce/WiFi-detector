@@ -1,33 +1,34 @@
 package com.example.wifidetector;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.net.wifi.ScanResult;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
 
     private WifiManager wifiManager;
-    //private WifiInfo wifiInformation; // get connected AP information
     private ListView listView;
     private Button buttonScan;
-    private int size=0;
     private List<ScanResult> results;
     private ArrayList<String> arraylist = new ArrayList<>();
     private ArrayAdapter adapter;
@@ -48,12 +49,10 @@ public class MainActivity extends AppCompatActivity {
         listView = findViewById(R.id.wifiList);
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
-
-
-        if(!wifiManager.isWifiEnabled()){
-            //Toast.makeText(this, "wifi is disabled. atuo enable it.",Toast.LENGTH_LONG).show();
-            Toast.makeText(this, "wifi is disabled. Please turn on wifi",Toast.LENGTH_LONG).show();
-            //wifiManager.setWifiEnabled(true);
+        //check location Permission and open it.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1000);
         }
 
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,arraylist);
@@ -63,12 +62,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 Intent intent = new Intent(MainActivity.this, detailsActivity.class);
+                intent.putExtra("ssidname",arraylist.get(i));
                 startActivity(intent);
             }
         });
-
-        //scanwifi();
-
     }
 
     private void startscan(){
@@ -77,13 +74,12 @@ public class MainActivity extends AppCompatActivity {
         wifiReceiver = new MyBroadcast();
         registerReceiver( wifiReceiver , intentFilter);
         wifiManager.startScan();
-        //Toast.makeText(this, "scanning wifi...",Toast.LENGTH_LONG).show();
-
     }
 
 
     private class MyBroadcast extends BroadcastReceiver{
 
+        @RequiresApi(api = Build.VERSION_CODES.M)
         @Override
         public void onReceive(Context context, Intent intent) {
 
@@ -94,30 +90,22 @@ public class MainActivity extends AppCompatActivity {
                 if(scanResult.SSID==null||scanResult.SSID.length()==0){
                     continue;
                 }
-                arraylist.add(scanResult.SSID + " - " + scanResult.capabilities);
-
+                arraylist.add(scanResult.SSID +"  CH "+convertFrequencyToChannel(scanResult.frequency)
+                        + "   " +scanResult.level +" dBm");
             }
-
+            Collections.sort(arraylist);
             adapter.notifyDataSetChanged();
         }
     }
-//    protected void onDestroy(){
-//        super.onDestroy();
-//        unregisterReceiver(wifiReceiver);
-//    }
 
-//    BroadcastReceiver wifiReceiver = new BroadcastReceiver() {
-//        @Override
-//        public void onReceive(Context context, Intent intent) {
-//            results = wifiManager.getScanResults();
-//
-//            for(ScanResult scanResult : results){
-//                arraylist.add(scanResult.SSID + " - " + scanResult.frequency);
-//            }
-//            adapter.notifyDataSetChanged();
-//            unregisterReceiver(this);
-//        }
-//    };
-
+    private int convertFrequencyToChannel(int freq) {
+        if (freq >= 2412 && freq <= 2484) {
+            return (freq - 2412) / 5 + 1;
+        } else if (freq >= 5170 && freq <= 5825) {
+            return (freq - 5170) / 5 + 34;
+        } else {
+            return -1;
+        }
+    }
 
 }
