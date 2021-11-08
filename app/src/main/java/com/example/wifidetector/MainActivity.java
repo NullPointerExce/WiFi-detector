@@ -18,9 +18,11 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -30,11 +32,22 @@ public class MainActivity extends AppCompatActivity {
     private ListView listView;
     private Button buttonScan;
     private List<ScanResult> results;
-    private ArrayList<String> arraylist = new ArrayList<>();
+    private ArrayList<String> stringList = new ArrayList<>();
+    private ArrayList<Result> resultList = new ArrayList<>();
     private ArrayAdapter adapter;
     private MyBroadcast wifiReceiver;
 
 
+    public class Result{
+        String ssid;
+        String bssid;//for distinguish same name
+        int frequency;
+        int level;
+
+        public Result(String name){
+            this.ssid=name;
+        }
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
                 startscan();
             }
         });
+
         listView = findViewById(R.id.wifiList);
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
@@ -55,21 +69,23 @@ public class MainActivity extends AppCompatActivity {
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1000);
         }
 
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,arraylist);
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,stringList);
         listView.setAdapter(adapter);
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 Intent intent = new Intent(MainActivity.this, detailsActivity.class);
-                intent.putExtra("ssidname",arraylist.get(i));
+                intent.putExtra("bssidname",resultList.get(i).bssid);
                 startActivity(intent);
             }
         });
     }
 
+
     private void startscan(){
-        arraylist.clear();
+        stringList.clear();
+        resultList.clear();
         IntentFilter intentFilter = new IntentFilter(wifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         wifiReceiver = new MyBroadcast();
         registerReceiver( wifiReceiver , intentFilter);
@@ -88,16 +104,36 @@ public class MainActivity extends AppCompatActivity {
 
             for(ScanResult scanResult : results){
                 if(scanResult.SSID==null||scanResult.SSID.length()==0){
+                    Result result = new Result("(Hidden SSID)");
+                    result.frequency = scanResult.frequency;
+                    result.level= scanResult.level;
+                    result.bssid=scanResult.BSSID;
+                    resultList.add(result);
                     continue;
                 }
-                arraylist.add(scanResult.SSID +"  CH "+convertFrequencyToChannel(scanResult.frequency)
-                        + "   " +scanResult.level +" dBm");
+
+                Result result = new Result(scanResult.SSID);
+                result.frequency = scanResult.frequency;
+                result.level= scanResult.level;
+                result.bssid=scanResult.BSSID;
+                resultList.add(result);
+
             }
-            Collections.sort(arraylist);
+
+            Collections.sort(resultList, new Comparator<Result>() {
+                @Override public int compare(Result r1, Result r2) {
+                    return r2.level- r1.level;
+                }
+            });
+
+            for(Result result : resultList){
+                stringList.add(result.ssid +"  CH "+convertFrequencyToChannel(result.frequency)
+                        + "   " +result.level +" dBm");
+            }
             adapter.notifyDataSetChanged();
         }
     }
-
+    
     private int convertFrequencyToChannel(int freq) {
         if (freq >= 2412 && freq <= 2484) {
             return (freq - 2412) / 5 + 1;
