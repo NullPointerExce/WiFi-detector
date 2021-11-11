@@ -127,18 +127,18 @@ public class MainActivity extends AppCompatActivity {
             });
 
             for(Result result : resultList){
-                stringList.add(result.ssid +"  CH "+convertFrequencyToChannel(result.frequency)
+                stringList.add(result.ssid +"  CH "+FrequencyToChannel(result.frequency)
                         + "   " +result.level +" dBm");
             }
             adapter.notifyDataSetChanged();
         }
     }
     
-    private int convertFrequencyToChannel(int freq) {
-        if (freq >= 2412 && freq <= 2484) {
-            return (freq - 2412) / 5 + 1;
-        } else if (freq >= 5170 && freq <= 5825) {
-            return (freq - 5170) / 5 + 34;
+    private int FrequencyToChannel(int frequency) {
+        if (frequency >= 2412 && frequency <= 2484) {
+            return (frequency - 2412) / 5 + 1;
+        } else if (frequency >= 5170 && frequency <= 5825) {
+            return (frequency - 5170) / 5 + 34;
         } else {
             return -1;
         }
