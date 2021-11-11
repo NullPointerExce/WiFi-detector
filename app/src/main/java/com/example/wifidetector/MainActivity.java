@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
         buttonScan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startscan();
+                scan();
             }
         });
 
@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void startscan(){
+    private void scan(){
         stringList.clear();
         resultList.clear();
         IntentFilter intentFilter = new IntentFilter(wifiManager.SCAN_RESULTS_AVAILABLE_ACTION);

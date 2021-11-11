@@ -4,6 +4,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -11,6 +12,12 @@ import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -21,12 +28,14 @@ public class detailsActivity extends AppCompatActivity {
     private StringBuffer wifiDetail;
     private TextView detailTextView;
     private TextView levelTextView;
-    //need change name.
 
-    private Timer mTimer;
+    private Timer timer;
     private WifiManager wifiManager;
     private List<ScanResult> results;
     int count =0;
+
+    private LineChart mLineChart;
+    private List<Entry> entries = new ArrayList<Entry>();
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -49,32 +58,51 @@ public class detailsActivity extends AppCompatActivity {
         }
         detailTextView.setText(wifiDetail);
 
-        //For real time line graph
+        //line chart
+        mLineChart = findViewById(R.id.linchart);
+        mLineChart.setDragEnabled(true);
+        mLineChart.setScaleEnabled(false);
+
+
+        //For real time details information and line chart.
         levelTextView = findViewById(R.id.leveldetails);
-        mTimer = new Timer();
-        mTimer.schedule(new TimerTask() {
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                startscan();
-
+                drawGraph(scan());
             }
-        }, 0, 31000); //refresh per  31s
-
+        }, 0, 3000); //refresh per  3s
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
-    private void startscan(){
+    private int scan(){
+        int level = 0;
         wifiManager.startScan();
         wifiDetail = new StringBuffer();
         results = wifiManager.getScanResults();
         for(ScanResult scanResult : results){
             if(bssidname.equals(scanResult.BSSID)){
-                wifiDetail.append("real time line graph: ").append("\n");
+                wifiDetail.append("Real time line graph: ").append("\n");
                 wifiDetail.append("Signal Strength: ").append(scanResult.level).append("\n");
-                wifiDetail.append("Count(every 31 second): ").append(count++);
+                count++;
+                level = scanResult.level;
             }
         }
         levelTextView.setText(wifiDetail);
+        return level;
     }
 
+    private void drawGraph(int level){
+        if(entries.size()>5){
+            entries.remove(0);
+        }
+        entries.add(new Entry(count, level));
+        LineDataSet dataSet = new LineDataSet(entries, "Wi-Fi Signal Strength (dBm)");
+        dataSet.setColor(Color.GREEN);
+        dataSet.setLineWidth(2);
+        LineData lineData = new LineData(dataSet);
+        mLineChart.setData(lineData);
+        mLineChart.invalidate();
+    }
 }
